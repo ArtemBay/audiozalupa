@@ -36,10 +36,6 @@ def write_serial(port: str, pos1: str, pos2: str, pos3: str):
 def serial_ports():
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
     else:
         raise EnvironmentError('Unsupported platform')
     result = []
@@ -56,7 +52,6 @@ def serial_ports():
                                      message="No connected devices found\nTry to check device connection with PC")
         global comstate
         comstate = "disabled"
-        result = ["No connected devices found. Try to check device connection with PC"]
     return result
 
 
