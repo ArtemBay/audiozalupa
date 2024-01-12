@@ -2,15 +2,30 @@ import tkinter
 import tkinter.messagebox
 import customtkinter
 import sys
-import glob
 import serial
 import os
 import json
-import time
+import win32api  # For various API functions
+import win32con  # For Windows constants
+import win32gui  # For GUI-related functions
+import win32process  # For process-related functions
+import win32security  # For security-related functions
+import pythoncom
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 comstate = "normal"
+
+
+def change_volume(app: str, volume: int):
+    PyIUnknown = CoCreateInstance(clsid, unkOuter, context, iid)
+    CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator)
+    IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator)
+    mmde = pythoncom.CoCreateInstance(CLSID_MMDeviceEnumerator, None, CLSCTX_ALL, IID_IMMDeviceEnumerator)
+    mmd = mmde.GetDefaultAudioEndpoint(eRender, eMultimedia)
+    mgr = mmd.Activate(IID_IAudioSessionManager)
+    sav = mgr.GetSimpleAudioVolume(None, True)
+    sav.SetMasterVolume(0.5)
 
 
 def read_serial(port: str):
@@ -22,7 +37,6 @@ def read_serial(port: str):
     return data
 
 
-# make custom font for u8g2 with discord, gamepad, audio speaker and etc
 def write_serial(port: str, pos1: str, pos2: str, pos3: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
     ser.write(f"{pos1},{pos2},{pos3}".encode('ascii'))
@@ -118,5 +132,6 @@ if __name__ == "__main__":
         app.mainloop()
     else:
         res = read_serial("COM3")
-        #res = write_serial("COM3", "discord", "speaker", "game") #DONT WORK
+        # res = write_serial("COM3", "discord", "speaker", "game") #DONT WORK
         print(res)
+        #change_volume("discord", 100)
