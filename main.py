@@ -6,15 +6,16 @@ import serial
 import os
 import json
 from pycaw.pycaw import AudioUtilities
-import soundcard as sc
+import ctypes
+import asyncio
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 comstate = "normal"
 
 
-def change_volume(app: str, newvolume: int):
-    if app in all_apps():
+async def change_volume(app: str, newvolume: int):
+    if app in await all_apps():
         sessions = AudioUtilities.GetAllSessions()
         for session in sessions:
             volume = session.SimpleAudioVolume
@@ -22,7 +23,7 @@ def change_volume(app: str, newvolume: int):
                 volume.SetMasterVolume(float(newvolume) / 100, None)
 
 
-def all_apps():
+async def all_apps():
     sessions = AudioUtilities.GetAllSessions()
     applist = []
     for session in sessions:
@@ -34,30 +35,31 @@ def all_apps():
     return applist
 
 
-def all_mics():
-    return sc.all_microphones()
+async def change_mic_volume(volume: int):
+    winmm = ctypes.WinDLL('winmm')
+    winmm.waveOutSetVolume(volume, 0x3333)
 
 
-def read_serial(port: str):
+async def read_serial(port: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
     i = 0
-    while i < 5:
+    while i < 2:
         data = ser.readline().decode("ISO-8859-1").strip()
         i += 1
     return data
 
 
-def write_serial(port: str, pos1: str, pos2: str, pos3: str):
+async def write_serial(port: str, pos1: str, pos2: str, pos3: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
     ser.write(f"{pos1},{pos2},{pos3}".encode('ascii'))
     i = 0
-    while i < 5:
+    while i < 2:
         data = ser.readline().decode("ISO-8859-1").strip()
         i += 1
     return data
 
 
-def serial_ports():
+async def serial_ports():
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     else:
@@ -141,8 +143,10 @@ if __name__ == "__main__":
         app = App()
         app.mainloop()
     else:
-        # res = read_serial("COM3")
-        # res = write_serial("COM3", "discord", "speaker", "game") #DONT WORK
-        # print(res)
-        # change_volume("Discord", 50)
-        print(all_mics())
+        res = list(asyncio.run(read_serial("COM3")))
+        for i in range(len(res)):
+            if res[i] == ",":
+                res[i] = ""
+        res = "".join(res).split()
+        asyncio.run(change_volume("Telegram", res[0]))
+        # change_mic_volume(100)
