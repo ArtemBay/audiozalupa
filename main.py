@@ -5,27 +5,37 @@ import sys
 import serial
 import os
 import json
-import win32api  # For various API functions
-import win32con  # For Windows constants
-import win32gui  # For GUI-related functions
-import win32process  # For process-related functions
-import win32security  # For security-related functions
-import pythoncom
+from pycaw.pycaw import AudioUtilities
+import soundcard as sc
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 comstate = "normal"
 
 
-def change_volume(app: str, volume: int):
-    PyIUnknown = CoCreateInstance(clsid, unkOuter, context, iid)
-    CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator)
-    IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator)
-    mmde = pythoncom.CoCreateInstance(CLSID_MMDeviceEnumerator, None, CLSCTX_ALL, IID_IMMDeviceEnumerator)
-    mmd = mmde.GetDefaultAudioEndpoint(eRender, eMultimedia)
-    mgr = mmd.Activate(IID_IAudioSessionManager)
-    sav = mgr.GetSimpleAudioVolume(None, True)
-    sav.SetMasterVolume(0.5)
+def change_volume(app: str, newvolume: int):
+    if app in all_apps():
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            volume = session.SimpleAudioVolume
+            if session.Process and session.Process.name() == f"{app}.exe":
+                volume.SetMasterVolume(float(newvolume) / 100, None)
+
+
+def all_apps():
+    sessions = AudioUtilities.GetAllSessions()
+    applist = []
+    for session in sessions:
+        try:
+            if not session.Process.name() == "LEDKeeper2.exe":
+                applist.append(session.Process.name()[:-4])
+        except:
+            pass
+    return applist
+
+
+def all_mics():
+    return sc.all_microphones()
 
 
 def read_serial(port: str):
@@ -131,7 +141,8 @@ if __name__ == "__main__":
         app = App()
         app.mainloop()
     else:
-        res = read_serial("COM3")
+        # res = read_serial("COM3")
         # res = write_serial("COM3", "discord", "speaker", "game") #DONT WORK
-        print(res)
-        #change_volume("discord", 100)
+        # print(res)
+        # change_volume("Discord", 50)
+        print(all_mics())
