@@ -12,6 +12,7 @@ import asyncio
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 comstate = "normal"
+serialdata = ""
 
 
 async def change_volume(app: str, newvolume: int):
@@ -44,9 +45,15 @@ async def read_serial(port: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
     i = 0
     while i < 2:
-        data = ser.readline().decode("ISO-8859-1").strip()
+        data = list(ser.readline().decode("ISO-8859-1").strip())
         i += 1
-    return data
+    for i in range(len(data)):
+        if data[i] == ",":
+            data[i] = ""
+    res = "".join(data).split()
+    global serialdata
+    serialdata = res
+    await asyncio.sleep(0.1)
 
 
 async def write_serial(port: str, pos1: str, pos2: str, pos3: str):
@@ -131,7 +138,7 @@ class App(customtkinter.CTk):
 
 
 if __name__ == "__main__":
-    dev = True
+    dev = False
     if not dev:
         if "config.json" not in os.listdir('./'):
             with open('config.json', 'w') as f:
@@ -140,13 +147,13 @@ if __name__ == "__main__":
             with open('config.json', 'r', encoding="utf-8") as f:
                 config_json = json.loads(str(f.read()))
                 port = config_json['port']
+        loop = asyncio.get_event_loop()
+        loop.create_task(read_serial("COM3"))
+        loop.run_forever()
+        print(serialdata)
+        asyncio.run(change_volume("Telegram", serialdata[0]))
         app = App()
         app.mainloop()
     else:
-        res = list(asyncio.run(read_serial("COM3")))
-        for i in range(len(res)):
-            if res[i] == ",":
-                res[i] = ""
-        res = "".join(res).split()
-        asyncio.run(change_volume("Telegram", res[0]))
         # change_mic_volume(100)
+        exit()
