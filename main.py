@@ -1,13 +1,15 @@
+import ctypes
+import json
+import os
+import sys
 import tkinter
 import tkinter.messagebox
+from multiprocessing import Process
+from time import sleep
+
 import customtkinter
-import sys
 import serial
-import os
-import json
 from pycaw.pycaw import AudioUtilities
-import ctypes
-import asyncio
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -41,19 +43,21 @@ async def change_mic_volume(volume: int):
     winmm.waveOutSetVolume(volume, 0x3333)
 
 
-async def read_serial(port: str):
+def read_serial(port: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
-    i = 0
-    while i < 2:
-        data = list(ser.readline().decode("ISO-8859-1").strip())
-        i += 1
-    for i in range(len(data)):
-        if data[i] == ",":
-            data[i] = ""
-    res = "".join(data).split()
-    global serialdata
-    serialdata = res
-    await asyncio.sleep(0.1)
+    while True:
+        i = 0
+        while i < 2:
+            data = list(ser.readline().decode("ISO-8859-1").strip())
+            i += 1
+        for i in range(len(data)):
+            if data[i] == ",":
+                data[i] = ""
+        res = "".join(data).split()
+        global serialdata
+        serialdata = res
+        print(serialdata)
+        sleep(0.1)
 
 
 async def write_serial(port: str, pos1: str, pos2: str, pos3: str):
@@ -66,7 +70,7 @@ async def write_serial(port: str, pos1: str, pos2: str, pos3: str):
     return data
 
 
-async def serial_ports():
+def serial_ports():
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     else:
@@ -93,7 +97,8 @@ def change_appearance_mode_event(new_appearance_mode: str):
 
 
 def change_com_port(port: str):
-    print("New com port: " + port)
+    with open('config.json', 'w') as f:
+        f.write('{"port":"' + port + '"}')
 
 
 class App(customtkinter.CTk):
@@ -147,11 +152,8 @@ if __name__ == "__main__":
             with open('config.json', 'r', encoding="utf-8") as f:
                 config_json = json.loads(str(f.read()))
                 port = config_json['port']
-        loop = asyncio.get_event_loop()
-        loop.create_task(read_serial("COM3"))
-        loop.run_forever()
-        print(serialdata)
-        asyncio.run(change_volume("Telegram", serialdata[0]))
+        p1 = Process(target=read_serial, args=("COM3",), daemon=True)
+        p1.start()
         app = App()
         app.mainloop()
     else:
