@@ -15,10 +15,11 @@ customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 comstate = "normal"
 serialdata = ""
+allapps = []
 
 
-async def change_volume(app: str, newvolume: int):
-    if app in await all_apps():
+def change_volume(app: str, newvolume: int):
+    if app in all_apps():
         sessions = AudioUtilities.GetAllSessions()
         for session in sessions:
             volume = session.SimpleAudioVolume
@@ -26,7 +27,7 @@ async def change_volume(app: str, newvolume: int):
                 volume.SetMasterVolume(float(newvolume) / 100, None)
 
 
-async def all_apps():
+def all_apps():
     sessions = AudioUtilities.GetAllSessions()
     applist = []
     for session in sessions:
@@ -35,10 +36,11 @@ async def all_apps():
                 applist.append(session.Process.name()[:-4])
         except:
             pass
-    return applist
+    global allapps
+    allapps = applist
 
 
-async def change_mic_volume(volume: int):
+def change_mic_volume(volume: int):
     winmm = ctypes.WinDLL('winmm')
     winmm.waveOutSetVolume(volume, 0x3333)
 
@@ -60,7 +62,7 @@ def read_serial(port: str):
         sleep(0.1)
 
 
-async def write_serial(port: str, pos1: str, pos2: str, pos3: str):
+def write_serial(port: str, pos1: str, pos2: str, pos3: str):
     ser = serial.Serial(port, baudrate=115200, timeout=1)
     ser.write(f"{pos1},{pos2},{pos3}".encode('ascii'))
     i = 0
@@ -140,6 +142,25 @@ class App(customtkinter.CTk):
         else:
             self.comselector_optionmenu.set("Change me")
         self.comselector_optionmenu.configure(state=comstate)
+        all_apps()
+
+        self.slider_progressbar_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        self.slider_progressbar_frame.grid(row=1, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.progressbar = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical", width=20)
+        self.progressbar.grid(row=1, column=0, padx=20, pady=(10, 10), sticky="n")
+        self.optionmenu = customtkinter.CTkOptionMenu(self.slider_progressbar_frame, dynamic_resizing=True,
+                                                      values=allapps)
+        self.optionmenu.grid(row=2, column=0, padx=20, pady=(20, 10))
+        self.progressbar = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical", width=20)
+        self.progressbar.grid(row=1, column=1, padx=20, pady=(10, 10), sticky="n")
+        self.optionmenu = customtkinter.CTkOptionMenu(self.slider_progressbar_frame, dynamic_resizing=True,
+                                                      values=allapps)
+        self.optionmenu.grid(row=2, column=1, padx=20, pady=(20, 10))
+        self.progressbar = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical", width=20)
+        self.progressbar.grid(row=1, column=2, padx=20, pady=(10, 10), sticky="n")
+        self.optionmenu = customtkinter.CTkOptionMenu(self.slider_progressbar_frame, dynamic_resizing=True,
+                                                      values=allapps)
+        self.optionmenu.grid(row=2, column=2, padx=20, pady=(20, 10))
 
 
 if __name__ == "__main__":
@@ -158,4 +179,5 @@ if __name__ == "__main__":
         app.mainloop()
     else:
         # change_mic_volume(100)
+        change_volume("Spotify.exe", 10)
         exit()
