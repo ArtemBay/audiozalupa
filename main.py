@@ -161,6 +161,11 @@ class App(customtkinter.CTk):
         self.optionmenu = customtkinter.CTkOptionMenu(self.slider_progressbar_frame, dynamic_resizing=True,
                                                       values=allapps)
         self.optionmenu.grid(row=2, column=2, padx=20, pady=(20, 10))
+        self.progressbar = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical", width=20)
+        self.progressbar.grid(row=1, column=3, padx=20, pady=(10, 10), sticky="n")
+        self.optionmenu = customtkinter.CTkOptionMenu(self.slider_progressbar_frame, dynamic_resizing=True,
+                                                      values=allapps)
+        self.optionmenu.grid(row=2, column=3, padx=20, pady=(20, 10))
 
 
 if __name__ == "__main__":

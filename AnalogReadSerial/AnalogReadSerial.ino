@@ -8,6 +8,6 @@ void loop() {
   //data = Serial.read();
   //Serial.println(data);
   //int sensorValue = analogRead(A0);
-  Serial.println("50, 100, 48");
+  Serial.println("50, 100, 48, 10");
   delay(0.1);
 }
